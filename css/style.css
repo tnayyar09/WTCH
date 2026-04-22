@@ -222,3 +222,24 @@ body.admin-body { background-color: var(--color-light); }
     .toggle .line2 { opacity: 0; }
     .toggle .line3 { transform: rotate(45deg) translate(-6px, -7px); }
 }
+.product-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+    gap: 2.5rem;
+    width: 100%; /* Ensure it takes full width */
+    min-height: 300px; /* Give it a minimum height to be visible */
+    border: 2px dashed red; /* --- DEBUGGING BORDER --- */
+}
+
+.product-card {
+    display: block; /* Ensure it's not hidden */
+    visibility: visible; /* Ensure it's not invisible */
+    opacity: 1; /* Ensure it's not transparent */
+    background: #fff;
+    text-align: center;
+    box-shadow: var(--shadow);
+    border-radius: 5px;
+    overflow: hidden;
+    transition: var(--transition);
+    border: 1px solid blue; /* --- DEBUGGING BORDER --- */
+}
