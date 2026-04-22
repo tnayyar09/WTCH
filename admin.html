@@ -3,121 +3,192 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Admin - Add Product</title>
-    <link rel="stylesheet" href="css/style.css">
+    <title>Admin Dashboard - Manage Watches</title>
+    <link rel="stylesheet" href="../css/style.css">
 </head>
-<body>
+<body class="admin-body">
+    <header class="admin-header">
+        <h1>Admin Dashboard</h1>
+        <a href="../index.html" target="_blank">View Live Site</a>
+    </header>
 
     <div class="admin-container">
-        <h1>Add a New Product</h1>
-        <p id="message"></p>
+        <nav class="admin-nav">
+            <a href="dashboard.html" class="active">Manage Watches</a>
+            <a href="manage-banners.html">Manage Banners</a>
+        </nav>
 
-        <form id="add-product-form">
-            <div class="form-group">
-                <label for="name">Product Name</label>
-                <input type="text" id="name" required>
-            </div>
-            <div class="form-group">
-                <label for="price">Price</label>
-                <input type="number" step="0.01" id="price" required>
-            </div>
-            <div class="form-group">
-                <label for="category">Category</label>
-                <input type="text" id="category" required placeholder="e.g., Luxury, Sports, Classic">
-            </div>
-            <div class="form-group">
-                <label for="description">Description</label>
-                <textarea id="description" rows="3" required></textarea>
-            </div>
-            <div class="form-group">
-                <label for="is_featured">Featured Watch?</label>
-                <select id="is_featured">
-                    <option value="false">No</option>
-                    <option value="true">Yes</option>
-                </select>
-            </div>
-            <div class="form-group">
-                <label for="image">Product Image</label>
-                <input type="file" id="image" accept="image/png, image/jpeg" required>
-            </div>
-            <button type="submit" id="submit-btn">Add Product</button>
-        </form>
+        <!-- Message Bar -->
+        <div id="message-bar" style="display: none;"></div>
 
-        <a href="index.html" class="nav-link">Back to Shop</a>
+        <div class="admin-card">
+            <h2>Add New Watch</h2>
+            <form id="add-watch-form" class="admin-form">
+                <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); gap: 1.5rem;">
+                    <div class="form-group">
+                        <label for="name">Watch Name</label>
+                        <input type="text" id="name" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="price">Price ($)</label>
+                        <input type="number" step="0.01" id="price" required>
+                    </div>
+                     <div class="form-group">
+                        <label for="category">Category</label>
+                        <input type="text" id="category" required placeholder="e.g., Luxury, Sports">
+                    </div>
+                </div>
+                <div class="form-group">
+                    <label for="description">Short Description</label>
+                    <textarea id="description" rows="3" required></textarea>
+                </div>
+                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1.5rem;">
+                     <div class="form-group">
+                        <label for="is_featured">Feature on Homepage?</label>
+                        <select id="is_featured">
+                            <option value="false">No</option>
+                            <option value="true">Yes</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label for="image">Watch Image</label>
+                        <input type="file" id="image" accept="image/png, image/jpeg, image/webp" required>
+                    </div>
+                </div>
+                <button type="submit" id="submit-btn" class="btn">Add Watch</button>
+            </form>
+        </div>
+
+        <div class="admin-card">
+            <h2>Current Watch Collection</h2>
+            <div style="overflow-x: auto;">
+                <table class="admin-table">
+                    <thead>
+                        <tr>
+                            <th>Image</th>
+                            <th>Name</th>
+                            <th>Category</th>
+                            <th>Price</th>
+                            <th>Featured</th>
+                            <th>Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody id="watches-table-body">
+                        <!-- Watch rows will be loaded by JS -->
+                    </tbody>
+                </table>
+            </div>
+        </div>
     </div>
 
-    <!-- Supabase JS Library -->
+    <!-- Scripts -->
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-    
-    <!-- Page Specific Script -->
     <script type="module">
-        // FIXED: 'client' ko 'supabase' se replace kar diya hai
-        import { supabase } from './js/supabase-client.js';
+        import { supabase } from '../js/supabase-client.js';
 
-        document.getElementById('add-product-form').addEventListener('submit', async (event) => {
-            event.preventDefault();
+        const form = document.getElementById('add-watch-form');
+        const submitBtn = document.getElementById('submit-btn');
+        const tableBody = document.getElementById('watches-table-body');
+        const messageBar = document.getElementById('message-bar');
 
-            const form = event.target;
+        // Function to show messages
+        const showMessage = (message, type = 'success') => {
+            messageBar.textContent = message;
+            messageBar.className = `message ${type}`;
+            messageBar.style.display = 'block';
+            setTimeout(() => { messageBar.style.display = 'none'; }, 4000);
+        };
+
+        // Fetch and display all watches
+        const fetchWatches = async () => {
+            const { data, error } = await supabase.from('watches').select('*').order('created_at', { ascending: false });
+            if (error) {
+                showMessage('Could not fetch watches.', 'error');
+                console.error(error);
+                return;
+            }
+
+            tableBody.innerHTML = data.map(watch => `
+                <tr data-id="${watch.id}">
+                    <td><img src="${watch.image_url}" alt="${watch.name}"></td>
+                    <td>${watch.name}</td>
+                    <td>${watch.category}</td>
+                    <td>$${watch.price.toFixed(2)}</td>
+                    <td>${watch.is_featured ? 'Yes' : 'No'}</td>
+                    <td class="actions">
+                        <a href="#" class="delete-btn" data-id="${watch.id}">Delete</a>
+                    </td>
+                </tr>
+            `).join('');
+        };
+
+        // Handle form submission
+        form.addEventListener('submit', async (e) => {
+            e.preventDefault();
+            submitBtn.disabled = true;
+            submitBtn.textContent = 'Saving...';
+
             const name = form.name.value;
             const price = parseFloat(form.price.value);
             const category = form.category.value;
             const description = form.description.value;
-            const isFeatured = form.is_featured.value === 'true';
+            const is_featured = form.is_featured.value === 'true';
             const imageFile = form.image.files[0];
-            
-            const messageEl = document.getElementById('message');
-            const submitBtn = document.getElementById('submit-btn');
-
-            submitBtn.disabled = true;
-            submitBtn.textContent = 'Uploading...';
-            messageEl.textContent = '';
-            messageEl.className = '';
 
             try {
-                if (!imageFile) throw new Error("Please select an image file.");
-                if (!name || !price || !category) throw new Error("Name, Price, and Category are required.");
+                if (!imageFile) throw new Error("Image is required.");
 
-                // 1. Upload image to Supabase Storage
+                // 1. Upload image
                 const imageName = `${Date.now()}-${imageFile.name}`;
-                const { error: imageError } = await supabase.storage
-                    .from('product-images')
-                    .upload(imageName, imageFile);
+                const { error: uploadError } = await supabase.storage.from('watch-images').upload(imageName, imageFile);
+                if (uploadError) throw uploadError;
 
-                if (imageError) throw imageError;
+                // 2. Get image URL
+                const { data: { publicUrl } } = supabase.storage.from('watch-images').getPublicUrl(imageName);
 
-                // 2. Get the public URL of the uploaded image
-                const { data: { publicUrl } } = supabase.storage
-                    .from('product-images')
-                    .getPublicUrl(imageName);
-
-                // 3. Insert product data into the database
-                const { error: dbError } = await supabase
-                    .from('watches')
-                    .insert([{ 
-                        name, 
-                        price, 
-                        category, 
-                        description, 
-                        is_featured: isFeatured, 
-                        image_url: publicUrl 
-                    }]);
-
-                if (dbError) throw dbError;
+                // 3. Insert into database
+                const { error: insertError } = await supabase.from('watches').insert([{ name, price, category, description, is_featured, image_url: publicUrl }]);
+                if (insertError) throw insertError;
                 
-                // Success!
-                messageEl.textContent = 'Product added successfully!';
-                messageEl.classList.add('success');
+                showMessage('Watch added successfully!');
                 form.reset();
+                fetchWatches(); // Refresh table
 
             } catch (error) {
-                console.error('Error adding product:', error);
-                messageEl.textContent = `Error: ${error.message}`;
-                messageEl.classList.add('error');
+                showMessage(`Error: ${error.message}`, 'error');
+                console.error(error);
             } finally {
                 submitBtn.disabled = false;
-                submitBtn.textContent = 'Add Product';
+                submitBtn.textContent = 'Add Watch';
             }
         });
+
+        // Handle delete functionality
+        tableBody.addEventListener('click', async (e) => {
+            if (e.target.classList.contains('delete-btn')) {
+                e.preventDefault();
+                const id = e.target.dataset.id;
+                
+                if (confirm('Are you sure you want to delete this watch?')) {
+                    try {
+                        const { error } = await supabase.from('watches').delete().eq('id', id);
+                        if (error) throw error;
+                        
+                        // Also delete the image from storage (optional but good practice)
+                        // This requires more complex logic to get the filename from URL, so we'll skip for now.
+                        
+                        showMessage('Watch deleted successfully.');
+                        fetchWatches(); // Refresh table
+                    } catch (error) {
+                        showMessage(`Error deleting watch: ${error.message}`, 'error');
+                        console.error(error);
+                    }
+                }
+            }
+        });
+
+        // Initial fetch
+        fetchWatches();
     </script>
 </body>
 </html>
