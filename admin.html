@@ -4,32 +4,23 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Admin Panel - Supreme Watches</title>
-    <!-- Path ab direct hai, '..' ki zaroorat nahi -->
     <link rel="stylesheet" href="css/style.css"> 
 </head>
 <body class="admin-body">
 
-    <!-- ======================= ADMIN HEADER ======================= -->
     <header class="admin-header">
         <h1>Admin Panel</h1>
-        <!-- Link to view the live site -->
         <a href="index.html" target="_blank">View Live Site</a>
     </header>
 
-    <!-- ======================= ADMIN MAIN CONTAINER ======================= -->
     <div class="admin-container">
-        
-        <!-- Admin Navigation Tabs -->
         <nav class="admin-nav">
             <a href="admin.html" class="active">Manage Watches</a>
-            <!-- Link to a future page for managing banners -->
             <a href="#">Manage Banners</a> 
         </nav>
 
-        <!-- Message Bar for Success/Error feedback -->
         <div id="message-bar" class="message" style="display: none;"></div>
 
-        <!-- Card for Adding a New Watch -->
         <div class="admin-card">
             <h2>Add New Watch</h2>
             <form id="add-watch-form" class="admin-form">
@@ -68,7 +59,6 @@
             </form>
         </div>
 
-        <!-- Card for Displaying Current Watches -->
         <div class="admin-card">
             <h2>Current Watch Collection</h2>
             <div style="overflow-x: auto;">
@@ -84,7 +74,6 @@
                         </tr>
                     </thead>
                     <tbody id="watches-table-body">
-                        <!-- Watch rows will be loaded by JavaScript -->
                         <tr><td colspan="6" style="text-align: center;">Loading watches...</td></tr>
                     </tbody>
                 </table>
@@ -92,49 +81,34 @@
         </div>
     </div>
 
-    <!-- ======================= SCRIPTS ======================= -->
-    <!-- Main Supabase Library -->
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-    
-    <!-- Page Specific Logic -->
     <script type="module">
-        // Import the Supabase client from the correct path (now direct)
         import { supabase } from './js/supabase-client.js';
 
-        // Get references to HTML elements
         const form = document.getElementById('add-watch-form');
         const submitBtn = document.getElementById('submit-btn');
         const tableBody = document.getElementById('watches-table-body');
         const messageBar = document.getElementById('message-bar');
 
-        // Reusable function to show success/error messages
         const showMessage = (message, type = 'success') => {
             messageBar.textContent = message;
             messageBar.className = `message ${type}`;
             messageBar.style.display = 'block';
-            // Hide the message after 4 seconds
             setTimeout(() => { messageBar.style.display = 'none'; }, 4000);
         };
 
-        // Function to fetch and display all watches in the table
         const fetchWatches = async () => {
-            const { data, error } = await supabase
-                .from('watches')
-                .select('*')
-                .order('created_at', { ascending: false });
-
+            const { data, error } = await supabase.from('watches').select('*').order('created_at', { ascending: false });
             if (error) {
                 showMessage('Could not fetch watches.', 'error');
                 console.error('Fetch Error:', error);
                 tableBody.innerHTML = `<tr><td colspan="6" style="text-align: center; color: red;">Error loading data.</td></tr>`;
                 return;
             }
-
             if (data.length === 0) {
                 tableBody.innerHTML = `<tr><td colspan="6" style="text-align: center;">No watches found. Add one above!</td></tr>`;
                 return;
             }
-
             tableBody.innerHTML = data.map(watch => `
                 <tr data-id="${watch.id}">
                     <td><img src="${watch.image_url}" alt="${watch.name}"></td>
@@ -143,20 +117,17 @@
                     <td>$${watch.price.toFixed(2)}</td>
                     <td>${watch.is_featured ? 'Yes' : 'No'}</td>
                     <td class="actions">
-                        <!-- Delete button with data-id attribute to identify the watch -->
                         <a href="#" class="delete-btn" data-id="${watch.id}" title="Delete this watch">Delete</a>
                     </td>
                 </tr>
             `).join('');
         };
 
-        // Handle form submission to add a new watch
         form.addEventListener('submit', async (e) => {
             e.preventDefault();
             submitBtn.disabled = true;
             submitBtn.textContent = 'Saving...';
 
-            // Get form values
             const name = form.name.value;
             const price = parseFloat(form.price.value);
             const category = form.category.value;
@@ -166,22 +137,18 @@
 
             try {
                 if (!imageFile) throw new Error("An image is required.");
-
-                // 1. Upload image to Supabase Storage
                 const imageName = `${Date.now()}-${imageFile.name}`;
                 const { error: uploadError } = await supabase.storage.from('watch-images').upload(imageName, imageFile);
                 if (uploadError) throw uploadError;
 
-                // 2. Get the public URL of the uploaded image
                 const { data: { publicUrl } } = supabase.storage.from('watch-images').getPublicUrl(imageName);
 
-                // 3. Insert the new watch data into the 'watches' table
                 const { error: insertError } = await supabase.from('watches').insert([{ name, price, category, description, is_featured, image_url: publicUrl }]);
                 if (insertError) throw insertError;
                 
                 showMessage('Watch added successfully!');
                 form.reset();
-                fetchWatches(); // Refresh the table with the new data
+                fetchWatches();
 
             } catch (error) {
                 showMessage(`Error: ${error.message}`, 'error');
@@ -192,21 +159,18 @@
             }
         });
 
-        // Handle delete functionality using event delegation
         tableBody.addEventListener('click', async (e) => {
-            // Check if a delete button was clicked
             if (e.target.classList.contains('delete-btn')) {
                 e.preventDefault();
                 const watchId = e.target.dataset.id;
                 
                 if (confirm('Are you sure you want to permanently delete this watch?')) {
                     try {
-                        // Delete the row from the 'watches' table
                         const { error } = await supabase.from('watches').delete().eq('id', watchId);
                         if (error) throw error;
                         
                         showMessage('Watch deleted successfully.');
-                        fetchWatches(); // Refresh the table to show the change
+                        fetchWatches();
                     } catch (error) {
                         showMessage(`Error deleting watch: ${error.message}`, 'error');
                         console.error('Delete Error:', error);
@@ -215,7 +179,6 @@
             }
         });
 
-        // Initial call to load all watches when the page loads
         fetchWatches();
     </script>
 </body>
