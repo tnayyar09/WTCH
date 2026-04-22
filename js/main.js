@@ -32,16 +32,19 @@ const initScrollAnimations = () => {
 };
 
 const createWatchCard = (watch) => {
-    // Safety check
     if (!watch) return ''; 
 
     const price = (typeof watch.price === 'number') ? watch.price.toFixed(2) : 'N/A';
-    const encodedText = encodeURIComponent(`I am interested to buy this watch: ${watch.name} (Price: $${price})`);
+    
+    // --- YEH HAI IMPORTANT CHANGE ---
+    // Hum message mein image ka URL bhi add kar rahe hain.
+    const messageText = `I am interested to buy this watch:\n\n*${watch.name}*\nPrice: $${price}\n\nImage: ${watch.image_url}`;
+    
+    const encodedText = encodeURIComponent(messageText);
     const whatsappLink = `https://wa.me/${WHATSAPP_NUMBER}?text=${encodedText}`;
+    // ---------------------------------
 
-    // Debugging log to ensure data is correct
-    console.log(`Creating card for: ${watch.name}, Image URL: ${watch.image_url}`);
-
+    // Baaki ka HTML waisa hi rahega
     return `
         <div class="product-card fade-in">
             <div class="product-image">
