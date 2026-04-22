@@ -2,7 +2,7 @@
 import { supabase } from './supabase-client.js';
 
 // --- IMPORTANT: REPLACE WITH CLIENT'S WHATSAPP NUMBER ---
-const WHATSAPP_NUMBER = '1234567890'; // Country code ke saath, bina '+' ya spaces ke
+const WHATSAPP_NUMBER = '7888525380'; // Country code ke saath, bina '+' ya spaces ke
 
 // =================================================================
 // --- UI/UX & GENERAL FUNCTIONS ---
