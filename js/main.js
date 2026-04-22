@@ -32,9 +32,15 @@ const initScrollAnimations = () => {
 };
 
 const createWatchCard = (watch) => {
+    // Safety check
+    if (!watch) return ''; 
+
     const price = (typeof watch.price === 'number') ? watch.price.toFixed(2) : 'N/A';
     const encodedText = encodeURIComponent(`I am interested to buy this watch: ${watch.name} (Price: $${price})`);
     const whatsappLink = `https://wa.me/${WHATSAPP_NUMBER}?text=${encodedText}`;
+
+    // Debugging log to ensure data is correct
+    console.log(`Creating card for: ${watch.name}, Image URL: ${watch.image_url}`);
 
     return `
         <div class="product-card fade-in">
@@ -169,9 +175,7 @@ const initCollectionPage = async () => {
         const startIndex = (currentPage - 1) * ITEMS_PER_PAGE;
         const paginatedWatches = filteredWatches.slice(startIndex, startIndex + ITEMS_PER_PAGE);
 
-        // --- DEBUGGING LINE ---
         console.log("Rendering these watches:", paginatedWatches);
-        // ----------------------
 
         watchesGrid.innerHTML = paginatedWatches.length > 0 ? paginatedWatches.map(createWatchCard).join('') : `<p>No watches match your criteria.</p>`;
         productCountEl.textContent = `Showing ${paginatedWatches.length} of ${filteredWatches.length} products`;
@@ -225,29 +229,3 @@ document.addEventListener('DOMContentLoaded', () => {
     
     initScrollAnimations();
 });
-const createWatchCard = (watch) => {
-    // Agar watch object hi nahi hai, toh khaali string return karo
-    if (!watch) return ''; 
-
-    const price = (typeof watch.price === 'number') ? watch.price.toFixed(2) : 'N/A';
-    const encodedText = encodeURIComponent(`I am interested to buy this watch: ${watch.name} (Price: $${price})`);
-    const whatsappLink = `https://wa.me/${WHATSAPP_NUMBER}?text=${encodedText}`;
-
-    // --- Let's add a console.log here too ---
-    console.log(`Creating card for: ${watch.name}, Image URL: ${watch.image_url}`);
-    // ------------------------------------------
-
-    return `
-        <div class="product-card fade-in">
-            <div class="product-image">
-                <img src="${watch.image_url}" alt="${watch.name}" loading="lazy">
-            </div>
-            <div class="product-info">
-                <h3>${watch.name}</h3>
-                <p class="description">${watch.description || 'A masterpiece of precision and style.'}</p>
-                <div class="product-price">$${price}</div>
-                <a href="${whatsappLink}" target="_blank" class="btn btn-whatsapp">Buy on WhatsApp</a>
-            </div>
-        </div>
-    `;
-};
