@@ -1,0 +1,71 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Supabase Watch Shop</title>
+    <link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+
+    <h1>Our Exquisite Watch Collection</h1>
+
+    <div id="product-container">
+        <p>Loading watches from Supabase...</p>
+    </div>
+
+    <a href="admin.html" class="nav-link">Go to Admin Panel</a>
+
+    <!-- Supabase JS Library (must be loaded before our scripts) -->
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    
+    <!-- Our Page-specific script, now as a module -->
+    <script type="module">
+        // Import the initialized supabase client
+        import { supabase } from './js/supabase-client.js';
+
+        // Wait for the DOM to be fully loaded before running the script
+        document.addEventListener('DOMContentLoaded', async () => {
+            const container = document.getElementById('product-container');
+
+            try {
+                // Fetch products from the 'products' table
+                const { data: products, error } = await supabase
+                    .from('products')
+                    .select('*')
+                    .order('created_at', { ascending: false }); // Show newest first
+
+                if (error) {
+                    throw error; // Let the catch block handle the error
+                }
+                
+                if (products.length === 0) {
+                    container.innerHTML = '<p>No watches found. Please add some from the admin panel.</p>';
+                    return;
+                }
+
+                container.innerHTML = ''; // Clear loading message
+                
+                products.forEach(product => {
+                    // Check if price is a valid number, otherwise default to 0
+                    const price = (typeof product.price === 'number') ? product.price : 0;
+                    
+                    const productCardHTML = `
+                        <div class="product-card">
+                            <img src="${product.image_url}" alt="${product.name}">
+                            <h3>${product.name}</h3>
+                            <p class="price">$${price.toFixed(2)}</p>
+                        </div>
+                    `;
+                    container.innerHTML += productCardHTML;
+                });
+
+            } catch (error) {
+                console.error('Error fetching products:', error);
+                container.innerHTML = `<p style="color: red;">Error loading products: ${error.message}</p>`;
+            }
+        });
+    </script>
+
+</body>
+</html>

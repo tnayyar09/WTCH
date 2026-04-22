@@ -1,0 +1,102 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Admin - Add Product</title>
+    <link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+
+    <div class="admin-container">
+        <h1>Add a New Product</h1>
+        <p id="message"></p>
+
+        <form id="add-product-form">
+            <div class="form-group">
+                <label for="name">Product Name</label>
+                <input type="text" id="name" required>
+            </div>
+            <div class="form-group">
+                <label for="price">Price</label>
+                <input type="number" step="0.01" id="price" required>
+            </div>
+            <div class="form-group">
+                <label for="image">Product Image</label>
+                <input type="file" id="image" accept="image/png, image/jpeg" required>
+            </div>
+            <button type="submit" id="submit-btn">Add Product</button>
+        </form>
+
+        <a href="index.html" class="nav-link">Back to Shop</a>
+    </div>
+
+    <!-- Supabase JS Library -->
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    
+    <!-- Our Page-specific script, as a module -->
+    <script type="module">
+        // Import the initialized supabase client
+        import { supabase } from './js/supabase-client.js';
+
+        document.getElementById('add-product-form').addEventListener('submit', async (event) => {
+            event.preventDefault(); // Stop form from submitting the old way
+
+            const form = event.target;
+            const name = form.name.value;
+            const price = parseFloat(form.price.value);
+            const imageFile = form.image.files[0];
+            
+            const messageEl = document.getElementById('message');
+            const submitBtn = document.getElementById('submit-btn');
+
+            // Disable button and show loading state
+            submitBtn.disabled = true;
+            submitBtn.textContent = 'Uploading...';
+            messageEl.textContent = '';
+            messageEl.className = '';
+
+            try {
+                if (!imageFile) throw new Error("Please select an image file.");
+                if (!name || !price) throw new Error("Name and Price are required.");
+
+                // 1. Upload image to Supabase Storage
+                const imageName = `${Date.now()}-${imageFile.name}`;
+                const { error: imageError } = await supabase.storage
+                    .from('product-images') // Your bucket name
+                    .upload(imageName, imageFile);
+
+                if (imageError) throw imageError;
+
+                // 2. Get the public URL of the uploaded image
+                const { data: { publicUrl } } = supabase.storage
+                    .from('product-images')
+                    .getPublicUrl(imageName);
+
+                // 3. Insert product data (including image URL) into the database
+                const { error: dbError } = await supabase
+                    .from('products')
+                    .insert([
+                        { name: name, price: price, image_url: publicUrl }
+                    ]);
+
+                if (dbError) throw dbError;
+                
+                // Success!
+                messageEl.textContent = 'Product added successfully!';
+                messageEl.classList.add('success');
+                form.reset(); // Clear the form
+
+            } catch (error) {
+                console.error('Error adding product:', error);
+                messageEl.textContent = `Error: ${error.message}`;
+                messageEl.classList.add('error');
+            } finally {
+                // Re-enable button
+                submitBtn.disabled = false;
+                submitBtn.textContent = 'Add Product';
+            }
+        });
+    </script>
+</body>
+</html>
