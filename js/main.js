@@ -1,9 +1,24 @@
 // js/main.js
 import { supabase } from './supabase-client.js';
 
-const WHATSAPP_NUMBER = '1234567890'; // IMPORTANT: Client's number (no + or spaces)
+// --- IMPORTANT: REPLACE WITH CLIENT'S WHATSAPP NUMBER ---
+const WHATSAPP_NUMBER = '1234567890'; // Country code ke saath, bina '+' ya spaces ke
 
-// --- UI/UX Enhancements ---
+// =================================================================
+// --- UI/UX & GENERAL FUNCTIONS ---
+// =================================================================
+
+const initNavbar = () => {
+    const burger = document.querySelector('.burger');
+    const nav = document.querySelector('.nav-links');
+    if (burger && nav) {
+        burger.addEventListener('click', () => {
+            nav.classList.toggle('active');
+            burger.classList.toggle('toggle');
+        });
+    }
+};
+
 const initScrollAnimations = () => {
     const observer = new IntersectionObserver((entries) => {
         entries.forEach(entry => {
@@ -13,21 +28,7 @@ const initScrollAnimations = () => {
         });
     }, { threshold: 0.1 });
 
-    document.querySelectorAll('.fade-in').forEach(el => {
-        observer.observe(el);
-    });
-};
-
-// --- General Functions ---
-const initNavbar = () => {
-    const burger = document.querySelector('.burger');
-    const nav = document.querySelector('.nav-links');
-    if (burger) {
-        burger.addEventListener('click', () => {
-            nav.classList.toggle('active');
-            burger.classList.toggle('toggle');
-        });
-    }
+    document.querySelectorAll('.fade-in').forEach(el => observer.observe(el));
 };
 
 const createWatchCard = (watch) => {
@@ -50,13 +51,17 @@ const createWatchCard = (watch) => {
     `;
 };
 
-// --- Homepage Logic ---
+// =================================================================
+// --- HOMEPAGE LOGIC ---
+// =================================================================
+
 const initHomepage = async () => {
     const sliderContainer = document.getElementById('hero-slider');
     const featuredGrid = document.getElementById('featured-watches-grid');
 
+    // Load Banners
     if (sliderContainer) {
-        const { data: banners, error } = await supabase.from('banners').select('*').order('created_at');
+        const { data: banners, error } = await supabase.from('banners').select('*').order('created_at', { ascending: false });
         if (error) { console.error("Error fetching banners:", error); } 
         else if (banners && banners.length > 0) {
             sliderContainer.innerHTML = banners.map((banner, index) => `
@@ -75,48 +80,139 @@ const initHomepage = async () => {
             </div>`;
             
             const slides = document.querySelectorAll('.slide');
-            const nextBtn = document.getElementById('next-slide');
-            const prevBtn = document.getElementById('prev-slide');
-            let currentSlide = 0;
-            let slideInterval = setInterval(nextSlide, 7000); // Auto-slide
+            if (slides.length > 1) {
+                const nextBtn = document.getElementById('next-slide');
+                const prevBtn = document.getElementById('prev-slide');
+                let currentSlide = 0;
+                let slideInterval;
 
-            function nextSlide() {
-                currentSlide = (currentSlide + 1) % slides.length;
-                showSlide(currentSlide);
-            }
+                const nextSlide = () => {
+                    currentSlide = (currentSlide + 1) % slides.length;
+                    showSlide(currentSlide);
+                };
 
-            function showSlide(index) {
-                slides.forEach((slide, i) => slide.classList.toggle('active', i === index));
-                clearInterval(slideInterval);
+                const showSlide = (index) => {
+                    slides.forEach((slide, i) => slide.classList.toggle('active', i === index));
+                    clearInterval(slideInterval);
+                    slideInterval = setInterval(nextSlide, 7000); // Auto-slide every 7 seconds
+                };
+                
                 slideInterval = setInterval(nextSlide, 7000);
+                nextBtn.addEventListener('click', nextSlide);
+                prevBtn.addEventListener('click', () => {
+                    currentSlide = (currentSlide - 1 + slides.length) % slides.length;
+                    showSlide(currentSlide);
+                });
             }
-
-            nextBtn.addEventListener('click', nextSlide);
-            prevBtn.addEventListener('click', () => {
-                currentSlide = (currentSlide - 1 + slides.length) % slides.length;
-                showSlide(currentSlide);
-            });
         }
     }
 
+    // Load Featured Watches
     if (featuredGrid) {
-        const { data, error } = await supabase.from('watches').select('*').eq('is_featured', true).limit(3);
+        const { data, error } = await supabase.from('watches').select('*').eq('is_featured', true).limit(3).order('created_at', { ascending: false });
         if (error) { console.error("Error fetching featured watches:", error); }
         else {
             featuredGrid.innerHTML = data.map(createWatchCard).join('');
-            initScrollAnimations();
         }
     }
 };
 
-// --- Collection Page Logic ---
+// =================================================================
+// --- COLLECTION PAGE LOGIC ---
+// =================================================================
+
 const initCollectionPage = async () => {
-    // ... [Collection page logic yahan waisa hi rahega jaisa pehle tha] ...
-    // Note: Add 'fade-in' class to the product grid in collection.html for animations
+    const watchesGrid = document.getElementById('all-watches-grid');
+    const categoryFilter = document.getElementById('category-filter');
+    const priceRange = document.getElementById('price-range');
+    const priceValue = document.getElementById('price-value');
+    const resetBtn = document.getElementById('reset-filters');
+    const paginationContainer = document.getElementById('pagination');
+    const productCountEl = document.getElementById('product-count');
+
+    if (!watchesGrid) return; // Exit if not on collection page
+
+    let allWatches = [];
+    let categories = new Set();
+    const ITEMS_PER_PAGE = 6;
+    let currentPage = 1;
+    
+    // Fetch all data once
+    watchesGrid.innerHTML = `<p>Loading collection...</p>`;
+    const { data, error } = await supabase.from('watches').select('*').order('created_at', { ascending: false });
+    if(error) {
+        console.error("Error fetching watches:", error);
+        watchesGrid.innerHTML = `<p>Could not load watches. Please try again later.</p>`;
+        return;
+    }
+    allWatches = data;
+    allWatches.forEach(watch => categories.add(watch.category));
+
+    // Populate category filter
+    categoryFilter.innerHTML = `<li><label><input type="radio" name="category" value="all" checked> All Categories</label></li>`;
+    categories.forEach(cat => {
+        categoryFilter.innerHTML += `<li><label><input type="radio" name="category" value="${cat}"> ${cat}</label></li>`;
+    });
+
+    // Main render function
+    const renderWatches = () => {
+        const selectedCategory = document.querySelector('input[name="category"]:checked').value;
+        const maxPrice = parseFloat(priceRange.value);
+
+        let filteredWatches = allWatches.filter(watch => {
+            const categoryMatch = selectedCategory === 'all' || watch.category === selectedCategory;
+            const priceMatch = watch.price <= maxPrice;
+            return categoryMatch && priceMatch;
+        });
+
+        const totalPages = Math.ceil(filteredWatches.length / ITEMS_PER_PAGE);
+        currentPage = Math.min(currentPage, totalPages) || 1; // Reset to 1 if no pages
+        
+        const startIndex = (currentPage - 1) * ITEMS_PER_PAGE;
+        const paginatedWatches = filteredWatches.slice(startIndex, startIndex + ITEMS_PER_PAGE);
+
+        watchesGrid.innerHTML = paginatedWatches.length > 0 ? paginatedWatches.map(createWatchCard).join('') : `<p>No watches match your criteria.</p>`;
+        productCountEl.textContent = `Showing ${paginatedWatches.length} of ${filteredWatches.length} products`;
+        
+        renderPagination(totalPages);
+    };
+
+    const renderPagination = (totalPages) => {
+        paginationContainer.innerHTML = '';
+        if (totalPages <= 1) return;
+        for (let i = 1; i <= totalPages; i++) {
+            const btn = document.createElement('button');
+            btn.textContent = i;
+            if (i === currentPage) btn.classList.add('active');
+            btn.addEventListener('click', () => {
+                currentPage = i;
+                renderWatches();
+                window.scrollTo(0, 0); // Scroll to top on page change
+            });
+            paginationContainer.appendChild(btn);
+        }
+    };
+    
+    // Event listeners
+    categoryFilter.addEventListener('change', () => { currentPage = 1; renderWatches(); });
+    priceRange.addEventListener('input', () => { priceValue.textContent = priceRange.value; });
+    priceRange.addEventListener('change', () => { currentPage = 1; renderWatches(); });
+    resetBtn.addEventListener('click', () => {
+        document.querySelector('input[name="category"][value="all"]').checked = true;
+        priceRange.value = 5000;
+        priceValue.textContent = 5000;
+        currentPage = 1;
+        renderWatches();
+    });
+
+    // Initial render
+    renderWatches();
 };
 
+// =================================================================
+// --- PAGE ROUTER (Runs on every page load) ---
+// =================================================================
 
-// --- Page Router ---
 document.addEventListener('DOMContentLoaded', () => {
     initNavbar();
     const path = window.location.pathname;
@@ -124,9 +220,9 @@ document.addEventListener('DOMContentLoaded', () => {
     if (path.endsWith('/') || path.endsWith('index.html')) {
         initHomepage();
     } else if (path.endsWith('collection.html')) {
-        // initCollectionPage(); // Collection page ka logic yahan call karein
+        initCollectionPage();
     }
-
-    // Call scroll animations on all pages that might have .fade-in elements
+    
+    // Always init scroll animations for elements that might be on the page
     initScrollAnimations();
 });
