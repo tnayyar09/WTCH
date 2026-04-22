@@ -1,15 +1,14 @@
 // js/supabase-client.js
 
-// IMPORTANT: REPLACE WITH YOUR SUPABASE PROJECT DETAILS
-const SUPABASE_URL = 'YAHAN_APNA_SUPABASE_PROJECT_URL_DAALEIN';
-const SUPABASE_ANON_KEY = 'YAHAN_APNA_SUPABASE_ANON_KEY_DAALEIN';
+// Aapki Sahi URL aur Key
+const SUPABASE_URL = 'https://fxpxsmnakwqczgrhiwkl.supabase.co';
+const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImZ4cHhzbW5ha3dxY3pncmhpd2tsIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzY4MjU5MzAsImV4cCI6MjA5MjQwMTkzMH0.-gmIrIiWakuHKOiuDnlW9ZQOJWRntDHUTkzXiU79Hao';
 
-if (!SUPABASE_URL || SUPABASE_URL.includes('YAHAN_APNA')) {
-    console.error("***********************************************************************************");
-    console.error("** ERROR: Supabase URL and Key are required.                                     **");
-    console.error("** Please update 'js/supabase-client.js' with your project's details.          **");
-    console.error("***********************************************************************************");
-    alert("Supabase client is not configured. Please check the console for details.");
+
+// Yeh check ab zaroori nahi, lekin rakhte hain
+if (!SUPABASE_URL || !SUPABASE_ANON_KEY) {
+    console.error("Supabase URL and Key are required.");
+    alert("Supabase client is not configured.");
 }
 
 // Initialize Supabase client and export it for use in other scripts
