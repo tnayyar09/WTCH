@@ -16,15 +16,19 @@
 
     <a href="admin.html" class="nav-link">Go to Admin Panel</a>
 
-    <!-- Supabase JS Library (must be loaded before our scripts) -->
+    <!-- 
+      CORRECT ORDER:
+      STEP 1: Load the main Supabase library first. This creates the global `supabase` object.
+    -->
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     
-    <!-- Our Page-specific script, now as a module -->
+    <!-- 
+      STEP 2: Now, load our custom module. It can now safely use the `supabase` object.
+    -->
     <script type="module">
-        // Import the initialized supabase client
-        import { supabase } from './js/supabase-client.js';
+        // Import our custom-initialized client
+        import { client as supabase } from './js/supabase-client.js';
 
-        // Wait for the DOM to be fully loaded before running the script
         document.addEventListener('DOMContentLoaded', async () => {
             const container = document.getElementById('product-container');
 
@@ -33,21 +37,18 @@
                 const { data: products, error } = await supabase
                     .from('products')
                     .select('*')
-                    .order('created_at', { ascending: false }); // Show newest first
+                    .order('created_at', { ascending: false });
 
-                if (error) {
-                    throw error; // Let the catch block handle the error
-                }
+                if (error) throw error;
                 
                 if (products.length === 0) {
                     container.innerHTML = '<p>No watches found. Please add some from the admin panel.</p>';
                     return;
                 }
 
-                container.innerHTML = ''; // Clear loading message
+                container.innerHTML = '';
                 
                 products.forEach(product => {
-                    // Check if price is a valid number, otherwise default to 0
                     const price = (typeof product.price === 'number') ? product.price : 0;
                     
                     const productCardHTML = `
