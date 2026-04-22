@@ -59,7 +59,6 @@ const initHomepage = async () => {
     const sliderContainer = document.getElementById('hero-slider');
     const featuredGrid = document.getElementById('featured-watches-grid');
 
-    // Load Banners
     if (sliderContainer) {
         const { data: banners, error } = await supabase.from('banners').select('*').order('created_at', { ascending: false });
         if (error) { console.error("Error fetching banners:", error); } 
@@ -94,7 +93,7 @@ const initHomepage = async () => {
                 const showSlide = (index) => {
                     slides.forEach((slide, i) => slide.classList.toggle('active', i === index));
                     clearInterval(slideInterval);
-                    slideInterval = setInterval(nextSlide, 7000); // Auto-slide every 7 seconds
+                    slideInterval = setInterval(nextSlide, 7000);
                 };
                 
                 slideInterval = setInterval(nextSlide, 7000);
@@ -107,10 +106,12 @@ const initHomepage = async () => {
         }
     }
 
-    // Load Featured Watches
     if (featuredGrid) {
         const { data, error } = await supabase.from('watches').select('*').eq('is_featured', true).limit(3).order('created_at', { ascending: false });
-        if (error) { console.error("Error fetching featured watches:", error); }
+        if (error) { 
+            console.error("Error fetching featured watches:", error);
+            featuredGrid.innerHTML = `<p style="color:red;">Could not load featured watches.</p>`;
+        }
         else {
             featuredGrid.innerHTML = data.map(createWatchCard).join('');
         }
@@ -130,31 +131,28 @@ const initCollectionPage = async () => {
     const paginationContainer = document.getElementById('pagination');
     const productCountEl = document.getElementById('product-count');
 
-    if (!watchesGrid) return; // Exit if not on collection page
+    if (!watchesGrid) return;
 
     let allWatches = [];
-    let categories = new Set();
     const ITEMS_PER_PAGE = 6;
     let currentPage = 1;
     
-    // Fetch all data once
     watchesGrid.innerHTML = `<p>Loading collection...</p>`;
     const { data, error } = await supabase.from('watches').select('*').order('created_at', { ascending: false });
+    
     if(error) {
         console.error("Error fetching watches:", error);
-        watchesGrid.innerHTML = `<p>Could not load watches. Please try again later.</p>`;
+        watchesGrid.innerHTML = `<p style="color:red;">Could not load watches. Please try again later.</p>`;
         return;
     }
     allWatches = data;
-    allWatches.forEach(watch => categories.add(watch.category));
 
-    // Populate category filter
+    const categories = [...new Set(allWatches.map(watch => watch.category))];
     categoryFilter.innerHTML = `<li><label><input type="radio" name="category" value="all" checked> All Categories</label></li>`;
     categories.forEach(cat => {
         categoryFilter.innerHTML += `<li><label><input type="radio" name="category" value="${cat}"> ${cat}</label></li>`;
     });
 
-    // Main render function
     const renderWatches = () => {
         const selectedCategory = document.querySelector('input[name="category"]:checked').value;
         const maxPrice = parseFloat(priceRange.value);
@@ -166,10 +164,14 @@ const initCollectionPage = async () => {
         });
 
         const totalPages = Math.ceil(filteredWatches.length / ITEMS_PER_PAGE);
-        currentPage = Math.min(currentPage, totalPages) || 1; // Reset to 1 if no pages
+        currentPage = Math.min(currentPage, totalPages) || 1;
         
         const startIndex = (currentPage - 1) * ITEMS_PER_PAGE;
         const paginatedWatches = filteredWatches.slice(startIndex, startIndex + ITEMS_PER_PAGE);
+
+        // --- DEBUGGING LINE ---
+        console.log("Rendering these watches:", paginatedWatches);
+        // ----------------------
 
         watchesGrid.innerHTML = paginatedWatches.length > 0 ? paginatedWatches.map(createWatchCard).join('') : `<p>No watches match your criteria.</p>`;
         productCountEl.textContent = `Showing ${paginatedWatches.length} of ${filteredWatches.length} products`;
@@ -187,13 +189,12 @@ const initCollectionPage = async () => {
             btn.addEventListener('click', () => {
                 currentPage = i;
                 renderWatches();
-                window.scrollTo(0, 0); // Scroll to top on page change
+                document.querySelector('.collection-page').scrollIntoView({ behavior: 'smooth' });
             });
             paginationContainer.appendChild(btn);
         }
     };
     
-    // Event listeners
     categoryFilter.addEventListener('change', () => { currentPage = 1; renderWatches(); });
     priceRange.addEventListener('input', () => { priceValue.textContent = priceRange.value; });
     priceRange.addEventListener('change', () => { currentPage = 1; renderWatches(); });
@@ -205,7 +206,6 @@ const initCollectionPage = async () => {
         renderWatches();
     });
 
-    // Initial render
     renderWatches();
 };
 
@@ -223,6 +223,5 @@ document.addEventListener('DOMContentLoaded', () => {
         initCollectionPage();
     }
     
-    // Always init scroll animations for elements that might be on the page
     initScrollAnimations();
 });
