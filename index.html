@@ -3,70 +3,54 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Supabase Watch Shop</title>
+    <title>Supreme Watches - Timeless Elegance</title>
     <link rel="stylesheet" href="css/style.css">
 </head>
 <body>
+    <header class="main-header">
+        <div class="container navbar">
+            <a href="index.html" class="logo">SUPREME</a>
+            <ul class="nav-links">
+                <li><a href="index.html" class="active">Home</a></li>
+                <li><a href="collection.html">Collection</a></li>
+                <li><a href="about.html">About Us</a></li>
+                <li><a href="contact.html">Contact Us</a></li>
+            </ul>
+            <div class="burger">
+                <div class="line1"></div>
+                <div class="line2"></div>
+                <div class="line3"></div>
+            </div>
+        </div>
+    </header>
 
-    <h1>Our Exquisite Watch Collection</h1>
+    <main>
+        <!-- Hero Banner Slider -->
+        <section class="hero-slider" id="hero-slider">
+            <!-- Slides will be loaded by JavaScript -->
+            <div class="slider-nav">
+                <button class="slider-btn" id="prev-slide">&lt;</button>
+                <button class="slider-btn" id="next-slide">&gt;</button>
+            </div>
+        </section>
 
-    <div id="product-container">
-        <p>Loading watches from Supabase...</p>
-    </div>
+        <!-- Featured Watches Section -->
+        <section class="featured-section">
+            <div class="container">
+                <h2 class="section-title">Featured Timepieces</h2>
+                <div class="product-grid" id="featured-watches-grid">
+                    <!-- Featured watches will be loaded by JavaScript -->
+                </div>
+            </div>
+        </section>
+    </main>
 
-    <a href="admin.html" class="nav-link">Go to Admin Panel</a>
+    <footer class="main-footer">
+        <p>&copy; 2024 Supreme Watches. All Rights Reserved.</p>
+    </footer>
 
-    <!-- 
-      CORRECT ORDER:
-      STEP 1: Load the main Supabase library first. This creates the global `supabase` object.
-    -->
+    <!-- Scripts -->
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-    
-    <!-- 
-      STEP 2: Now, load our custom module. It can now safely use the `supabase` object.
-    -->
-    <script type="module">
-        // Import our custom-initialized client
-        import { client as supabase } from './js/supabase-client.js';
-
-        document.addEventListener('DOMContentLoaded', async () => {
-            const container = document.getElementById('product-container');
-
-            try {
-                // Fetch products from the 'products' table
-                const { data: products, error } = await supabase
-                    .from('products')
-                    .select('*')
-                    .order('created_at', { ascending: false });
-
-                if (error) throw error;
-                
-                if (products.length === 0) {
-                    container.innerHTML = '<p>No watches found. Please add some from the admin panel.</p>';
-                    return;
-                }
-
-                container.innerHTML = '';
-                
-                products.forEach(product => {
-                    const price = (typeof product.price === 'number') ? product.price : 0;
-                    
-                    const productCardHTML = `
-                        <div class="product-card">
-                            <img src="${product.image_url}" alt="${product.name}">
-                            <h3>${product.name}</h3>
-                            <p class="price">$${price.toFixed(2)}</p>
-                        </div>
-                    `;
-                    container.innerHTML += productCardHTML;
-                });
-
-            } catch (error) {
-                console.error('Error fetching products:', error);
-                container.innerHTML = `<p style="color: red;">Error loading products: ${error.message}</p>`;
-            }
-        });
-    </script>
-
+    <script type="module" src="js/main.js"></script>
 </body>
 </html>
