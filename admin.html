@@ -3,97 +3,53 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Admin - Add Product</title>
-    <link rel="stylesheet" href="css/style.css">
+    <title>Admin Dashboard</title>
+    <link rel="stylesheet" href="../css/style.css">
 </head>
-<body>
+<body class="admin-body">
+    <header class="admin-header">
+        <h1>Admin Dashboard</h1>
+        <a href="../index.html" target="_blank">View Live Site</a>
+    </header>
 
     <div class="admin-container">
-        <h1>Add a New Product</h1>
-        <p id="message"></p>
+        <nav class="admin-nav">
+            <a href="dashboard.html" class="active">Manage Watches</a>
+            <a href="manage-banners.html">Manage Banners</a>
+        </nav>
 
-        <form id="add-product-form">
-            <div class="form-group">
-                <label for="name">Product Name</label>
-                <input type="text" id="name" required>
-            </div>
-            <div class="form-group">
-                <label for="price">Price</label>
-                <input type="number" step="0.01" id="price" required>
-            </div>
-            <div class="form-group">
-                <label for="image">Product Image</label>
-                <input type="file" id="image" accept="image/png, image/jpeg" required>
-            </div>
-            <button type="submit" id="submit-btn">Add Product</button>
-        </form>
+        <div class="admin-card">
+            <h2>Add New Watch</h2>
+            <form id="add-watch-form" class="admin-form">
+                <!-- Form fields go here (name, price, desc, category, image, is_featured checkbox) -->
+            </form>
+        </div>
 
-        <a href="index.html" class="nav-link">Back to Shop</a>
+        <div class="admin-card">
+            <h2>Current Watch Collection</h2>
+            <div style="overflow-x: auto;">
+                <table class="admin-table">
+                    <thead>
+                        <tr>
+                            <th>Image</th>
+                            <th>Name</th>
+                            <th>Category</th>
+                            <th>Price</th>
+                            <th>Featured</th>
+                            <th>Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody id="watches-table-body">
+                        <!-- Watch rows will be loaded by JS -->
+                    </tbody>
+                </table>
+            </div>
+        </div>
     </div>
 
-    <!-- 
-      CORRECT ORDER:
-      STEP 1: Load the main Supabase library first.
-    -->
+    <!-- Scripts -->
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-    
-    <!-- 
-      STEP 2: Now, load our custom module.
-    -->
-    <script type="module">
-        // Import our custom-initialized client
-        import { client as supabase } from './js/supabase-client.js';
-
-        document.getElementById('add-product-form').addEventListener('submit', async (event) => {
-            event.preventDefault();
-
-            const form = event.target;
-            const name = form.name.value;
-            const price = parseFloat(form.price.value);
-            const imageFile = form.image.files[0];
-            
-            const messageEl = document.getElementById('message');
-            const submitBtn = document.getElementById('submit-btn');
-
-            submitBtn.disabled = true;
-            submitBtn.textContent = 'Uploading...';
-            messageEl.textContent = '';
-            messageEl.className = '';
-
-            try {
-                if (!imageFile) throw new Error("Please select an image file.");
-                if (!name || !price) throw new Error("Name and Price are required.");
-
-                const imageName = `${Date.now()}-${imageFile.name}`;
-                const { error: imageError } = await supabase.storage
-                    .from('product-images')
-                    .upload(imageName, imageFile);
-
-                if (imageError) throw imageError;
-
-                const { data: { publicUrl } } = supabase.storage
-                    .from('product-images')
-                    .getPublicUrl(imageName);
-
-                const { error: dbError } = await supabase
-                    .from('products')
-                    .insert([{ name, price, image_url: publicUrl }]);
-
-                if (dbError) throw dbError;
-                
-                messageEl.textContent = 'Product added successfully!';
-                messageEl.classList.add('success');
-                form.reset();
-
-            } catch (error) {
-                console.error('Error adding product:', error);
-                messageEl.textContent = `Error: ${error.message}`;
-                messageEl.classList.add('error');
-            } finally {
-                submitBtn.disabled = false;
-                submitBtn.textContent = 'Add Product';
-            }
-        });
-    </script>
+    <!-- Admin-specific JS file (e.g., admin.js) -->
+    <!-- <script type="module" src="admin.js"></script> -->
 </body>
 </html>
