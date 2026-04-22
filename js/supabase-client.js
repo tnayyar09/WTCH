@@ -1,6 +1,7 @@
 // js/supabase-client.js
 
 // --- IMPORTANT: YAHAN APNI SUPABASE DETAILS DAALEIN ---
+// Maine aapki di hui details daal di hain. Agar aapne keys badli hain, toh isse update karein.
 const SUPABASE_URL = 'https://fxpxsmnakwqczgrhiwkl.supabase.co';
 const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImZ4cHhzbW5ha3dxY3pncmhpd2tsIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzY4MjU5MzAsImV4cCI6MjA5MjQwMTkzMH0.-gmIrIiWakuHKOiuDnlW9ZQOJWRntDHUTkzXiU79Hao';
 
@@ -16,12 +17,6 @@ if (window.supabase) {
     alert(errorMsg);
 }
 
-// A safety check to ensure keys are filled before exporting
-if (!SUPABASE_URL || SUPABASE_URL.includes('YOUR_SUPABASE')) {
-    const errorMsg = "Supabase client is not configured. Please update 'js/supabase-client.js' with your project details.";
-    console.error(errorMsg);
-    // We don't alert here again to avoid double alerts, console error is enough.
-}
-
 // Export the initialized client so other files can use it.
+// We are exporting it with the name 'supabase' so that `import { supabase } from '...'` works.
 export { supabase };
